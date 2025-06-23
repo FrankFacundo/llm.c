@@ -1,9 +1,11 @@
 CC ?= clang
 CFLAGS = -Ofast -Wno-unused-result -Wno-ignored-pragmas -Wno-unknown-attributes
+CFLAGS_DEBUG = -g -Og -fno-omit-frame-pointer
 LDFLAGS =
 LDLIBS = -lm
 INCLUDES =
 CFLAGS_COND = -march=native
+NVCC_DEBUG_FLAGS = $(filter-out -O%,$(NVCC_FLAGS)) -O0 -g -G -lineinfo
 
 # Find nvcc
 SHELL_UNAME = $(shell uname)
@@ -202,7 +204,7 @@ else
     # Detect if running on macOS or Linux
     ifeq ($(SHELL_UNAME), Darwin)
       $(info ✗ Multi-GPU on CUDA on Darwin is not supported, skipping NCCL support)
-    else ifeq ($(shell dpkg -l | grep -q nccl && echo "exists"), exists)
+    else ifeq ($(shell dpkg -l | grep -q ncclabcd && echo "exists"), exists)
       $(info ✓ NCCL found, OK to train with multiple GPUs)
       NVCC_FLAGS += -DMULTI_GPU
       NVCC_LDLIBS += -lnccl
@@ -254,6 +256,7 @@ ifeq ($(NVCC),)
     $(info ✗ nvcc not found, skipping GPU/CUDA builds)
 else
     $(info ✓ nvcc found, including GPU/CUDA support)
+    TARGETS += train_gpt2fp32cu_debug
     TARGETS += train_gpt2cu test_gpt2cu train_gpt2fp32cu test_gpt2fp32cu $(NVCC_CUDNN)
 endif
 
@@ -276,11 +279,15 @@ train_gpt2cu: train_gpt2.cu $(NVCC_CUDNN)
 train_gpt2fp32cu: train_gpt2_fp32.cu
 	$(NVCC) $(NVCC_FLAGS) $^ $(NVCC_LDFLAGS) $(NVCC_INCLUDES) $(NVCC_LDLIBS) $(CUDA_OUTPUT_FILE)
 
+train_gpt2fp32cu_debug: train_gpt2_fp32.cu
+	$(NVCC) $(NVCC_DEBUG_FLAGS) $^ $(NVCC_LDFLAGS) $(NVCC_INCLUDES) $(NVCC_LDLIBS) $(CUDA_OUTPUT_FILE)
+
 test_gpt2cu: test_gpt2.cu $(NVCC_CUDNN)
 	$(NVCC) $(NVCC_FLAGS) $(PFLAGS) $^ $(NVCC_LDFLAGS) $(NVCC_INCLUDES) $(NVCC_LDLIBS) $(CUDA_OUTPUT_FILE)
 
 test_gpt2fp32cu: test_gpt2_fp32.cu
 	$(NVCC) $(NVCC_FLAGS) $^ $(NVCC_LDFLAGS) $(NVCC_INCLUDES) $(NVCC_LDLIBS) $(CUDA_OUTPUT_FILE)
+
 
 profile_gpt2cu: profile_gpt2.cu $(NVCC_CUDNN)
 	$(NVCC) $(NVCC_FLAGS) $(PFLAGS) -lineinfo $^ $(NVCC_LDFLAGS) $(NVCC_INCLUDES) $(NVCC_LDLIBS)  $(CUDA_OUTPUT_FILE)

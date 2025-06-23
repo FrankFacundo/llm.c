@@ -1,0 +1,34 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build_gcc",
+      "type": "shell",
+      "command": "gcc",
+      "args": [
+        "-g",
+        "${file}",
+        "-o",
+        "${fileDirname}/${fileBasenameNoExtension}"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$gcc"],
+      "detail": "Generated task by debugging configuration."
+    },
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "make",
+      "args": ["train_gpt2fp32cu_debug"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "detail": "Build the project using the provided Makefile."
+    }
+  ]
+}
